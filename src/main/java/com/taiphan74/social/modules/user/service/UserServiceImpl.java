@@ -14,17 +14,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
     @Transactional
+    @Override
     public UserResponse create(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ConflictException("Username already exists");
@@ -32,7 +32,6 @@ public class UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("Email already exists");
         }
-
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -42,26 +41,29 @@ public class UserService {
                 .accountNonLocked(true)
                 .verified(false)
                 .build();
-
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    @Override
     public Page<UserResponse> getAll(Pageable pageable) {
         return userMapper.toResponsePage(userRepository.findAll(pageable));
     }
 
+    @Override
     public UserResponse getById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         return userMapper.toResponse(user);
     }
 
+    @Override
     public UserResponse findByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         return userMapper.toResponse(user);
     }
 
+    @Override
     public UserResponse findByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -69,6 +71,7 @@ public class UserService {
     }
 
     @Transactional
+    @Override
     public void delete(UUID id) {
         if (!userRepository.existsById(id)) {
             throw new NotFoundException("User not found");

@@ -2,7 +2,8 @@ package com.taiphan74.social.modules.user.controller;
 
 import com.taiphan74.social.modules.user.dto.UserCreateRequest;
 import com.taiphan74.social.modules.user.dto.UserResponse;
-import com.taiphan74.social.modules.user.service.UserService;
+import com.taiphan74.social.modules.user.service.IUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,10 +18,10 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
-    private final UserService userService;
+    private final IUserService userService;
 
     @PostMapping
-    public ResponseEntity<UserResponse> create(@RequestBody UserCreateRequest request) {
+    public ResponseEntity<UserResponse> create(@Valid @RequestBody UserCreateRequest request) {
         UserResponse response = userService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
@@ -30,27 +31,28 @@ public class UserController {
     }
 
     @GetMapping
-    public Page<UserResponse> getAll(Pageable pageable) {
-        return userService.getAll(pageable);
+    public ResponseEntity<Page<UserResponse>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(userService.getAll(pageable));
     }
 
     @GetMapping("/{id}")
-    public UserResponse getById(@PathVariable UUID id) {
-        return userService.getById(id);
+    public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getById(id));
     }
 
     @GetMapping("/username/{username}")
-    public UserResponse getByUsername(@PathVariable String username) {
-        return userService.findByUsername(username);
+    public ResponseEntity<UserResponse> getByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userService.findByUsername(username));
     }
 
     @GetMapping("/email/{email}")
-    public UserResponse getByEmail(@PathVariable String email) {
-        return userService.findByEmail(email);
+    public ResponseEntity<UserResponse> getByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(userService.findByEmail(email));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
