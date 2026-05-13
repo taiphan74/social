@@ -9,7 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Schema(description = "Authentication response")
 public class AuthResponse {
-    @Schema(description = "JWT token", example = "eyJhbGciOiJIUzI1NiIs...")
+    @Schema(description = "JWT access token", example = "eyJhbGciOiJIUzI1NiIs...")
     private String token;
     @Schema(description = "Authenticated user info")
     private UserResponse user;
