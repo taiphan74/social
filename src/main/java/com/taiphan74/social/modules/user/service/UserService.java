@@ -1,34 +1,36 @@
 package com.taiphan74.social.modules.user.service;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.taiphan74.social.exception.ConflictException;
+import com.taiphan74.social.exception.NotFoundException;
 import com.taiphan74.social.modules.user.dto.UserCreateRequest;
 import com.taiphan74.social.modules.user.dto.UserResponse;
 import com.taiphan74.social.modules.user.entity.ERole;
 import com.taiphan74.social.modules.user.entity.User;
+import com.taiphan74.social.modules.user.mapper.UserMapper;
 import com.taiphan74.social.modules.user.repository.UserRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Transactional
     public UserResponse create(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new ConflictException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email already exists");
         }
 
         User user = User.builder()
@@ -41,39 +43,36 @@ public class UserService {
                 .verified(false)
                 .build();
 
-        return toResponse(userRepository.save(user));
+        return userMapper.toResponse(userRepository.save(user));
     }
 
-    public List<UserResponse> getAll() {
-        return userRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public Page<UserResponse> getAll(Pageable pageable) {
+        return userMapper.toResponsePage(userRepository.findAll(pageable));
     }
 
     public UserResponse getById(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return toResponse(user);
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return userMapper.toResponse(user);
+    }
+
+    public UserResponse findByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return userMapper.toResponse(user);
+    }
+
+    public UserResponse findByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        return userMapper.toResponse(user);
     }
 
     @Transactional
     public void delete(UUID id) {
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found");
+            throw new NotFoundException("User not found");
         }
         userRepository.deleteById(id);
-    }
-
-    private UserResponse toResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .enabled(user.isEnabled())
-                .verified(user.isVerified())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
     }
 }
