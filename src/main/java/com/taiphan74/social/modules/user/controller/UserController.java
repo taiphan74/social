@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -30,6 +31,7 @@ public class UserController {
     private final IUserService userService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create user", description = "Create a new user (admin only)")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "User created",
@@ -47,6 +49,7 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users", description = "Returns a page of users")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Successful operation",
@@ -59,6 +62,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(summary = "Get user by ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Found the user",
@@ -72,6 +76,7 @@ public class UserController {
     }
 
     @GetMapping("/username/{username}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(summary = "Get user by username")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Found the user",
@@ -85,6 +90,7 @@ public class UserController {
     }
 
     @GetMapping("/email/{email}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(summary = "Get user by email")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Found the user",
@@ -98,6 +104,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user", description = "Admin only")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "User deleted"),
