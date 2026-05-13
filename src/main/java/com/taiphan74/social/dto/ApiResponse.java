@@ -1,15 +1,22 @@
 package com.taiphan74.social.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "API Response wrapper")
 public class ApiResponse<T> {
+    @Schema(description = "HTTP status code", example = "200")
     private int code;
+    @Schema(description = "Response message", example = "OK")
     private String message;
+    @Schema(description = "Response data")
     private T data;
+    @Schema(description = "Validation errors")
     private List<String> errors;
+    @Schema(description = "Response timestamp")
     private LocalDateTime timestamp;
 
     public ApiResponse(int code, String message, T data) {
