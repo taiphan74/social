@@ -1,5 +1,6 @@
 package com.taiphan74.social.modules.mail.service;
 
+import com.taiphan74.social.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,12 +26,11 @@ public class EmailServiceImpl implements IEmailService {
             message.setTo(to);
             message.setSubject("Your OTP verification code - Wavefy");
             message.setText("Your verification code is: " + otpCode + "\n\nThis code is valid for 5 minutes. Please do not share it with anyone.");
-            
             mailSender.send(message);
             log.info("OTP email sent to: {}", to);
         } catch (Exception e) {
             log.error("Error sending OTP email to {}: {}", to, e.getMessage());
-            throw new RuntimeException("Unable to send OTP email, please try again later.");
+            throw new EmailSendFailedException("Unable to send OTP email, please try again later.", e);
         }
     }
 }

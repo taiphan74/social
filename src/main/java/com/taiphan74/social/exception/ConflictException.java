@@ -6,4 +6,8 @@ public class ConflictException extends BaseException {
     public ConflictException(String message) {
         super(HttpStatus.CONFLICT, message);
     }
+
+    public ConflictException(String message, ErrorCode errorCode) {
+        super(HttpStatus.CONFLICT, message, errorCode);
+    }
 }

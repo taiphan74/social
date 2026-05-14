@@ -14,14 +14,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException e) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error(401, "Bad credentials"));
+                .body(ApiResponse.error(401, ErrorCode.BAD_CREDENTIALS, "Bad credentials"));
     }
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ApiResponse<Void>> handleBaseException(BaseException e) {
         return ResponseEntity
                 .status(e.getStatus())
-                .body(ApiResponse.error(e.getCode(), e.getMessage()));
+                .body(ApiResponse.error(e.getCode(), e.getErrorCode(), e.getMessage()));
+    }
+
+    @ExceptionHandler(EmailSendFailedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailSendFailedException(EmailSendFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(500, ErrorCode.EMAIL_SEND_FAILED, "Unable to send email."));
     }
 
     @ExceptionHandler(ValidationException.class)
@@ -35,6 +42,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(500, "Internal server error: " + e.getMessage()));
+                .body(ApiResponse.error(500, ErrorCode.INTERNAL_ERROR, "Internal server error: " + e.getMessage()));
     }
 }

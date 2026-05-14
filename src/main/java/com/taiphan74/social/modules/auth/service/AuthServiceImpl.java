@@ -1,6 +1,7 @@
 package com.taiphan74.social.modules.auth.service;
 
 import com.taiphan74.social.exception.BadRequestException;
+import com.taiphan74.social.exception.ErrorCode;
 import com.taiphan74.social.exception.UnauthorizedException;
 import com.taiphan74.social.modules.auth.dto.AuthResponse;
 import com.taiphan74.social.modules.auth.dto.ForgotPasswordRequest;
@@ -68,7 +69,7 @@ public class AuthServiceImpl implements IAuthService {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         UserResponse userResponse = userService.findByUsername(userDetails.getUsername());
         if (!userResponse.isVerified()) {
-            throw new BadRequestException("Email not verified. Please verify OTP before logging in.");
+            throw new BadRequestException("Email not verified. Please verify OTP before logging in.", ErrorCode.EMAIL_NOT_VERIFIED);
         }
         return buildAuthResponse(userResponse, response);
     }
@@ -98,7 +99,7 @@ public class AuthServiceImpl implements IAuthService {
     public AuthResponse refresh(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = getRefreshTokenFromCookie(request);
         if (refreshToken == null || !jwtUtils.validateRefreshToken(refreshToken)) {
-            throw new UnauthorizedException("Invalid or missing refresh token");
+            throw new UnauthorizedException("Invalid or missing refresh token", ErrorCode.INVALID_REFRESH_TOKEN);
         }
         String username = jwtUtils.extractUsername(refreshToken);
         String familyId = jwtUtils.extractTokenFamily(refreshToken);
@@ -107,7 +108,7 @@ public class AuthServiceImpl implements IAuthService {
         String newTokenId = UUID.randomUUID().toString();
         if (!refreshTokenService.validateAndRotate(userResponse.getId().toString(), familyId, oldTokenId, newTokenId)) {
             clearRefreshCookie(response);
-            throw new UnauthorizedException("Token reuse detected, please login again");
+            throw new UnauthorizedException("Token reuse detected, please login again", ErrorCode.TOKEN_REUSE_DETECTED);
         }
         String newRefreshToken = jwtUtils.generateRefreshToken(username, familyId, newTokenId);
         String newAccessToken = jwtUtils.generateToken(userDetailsService.loadUserByUsername(username));

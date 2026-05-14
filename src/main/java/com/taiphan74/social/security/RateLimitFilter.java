@@ -1,6 +1,7 @@
 package com.taiphan74.social.security;
 
 import com.taiphan74.social.config.RateLimitService;
+import com.taiphan74.social.exception.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,7 +74,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             if (!rateLimitService.isAllowed(key, limit, windowSeconds)) {
                 response.setStatus(429);
                 response.setContentType("application/json");
-                response.getWriter().write("{\"error\":\"Too many requests. Please try again later.\"}");
+                response.getWriter().write("{\"code\":429,\"errorCode\":\"" + ErrorCode.RATE_LIMITED + "\",\"message\":\"Too many requests. Please try again later.\"}");
                 return;
             }
         }
