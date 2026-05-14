@@ -1,14 +1,19 @@
 package com.taiphan74.social.modules.auth.service;
 
-import com.taiphan74.social.security.jwt.JwtUtils;
+import com.taiphan74.social.exception.BadRequestException;
+import com.taiphan74.social.exception.UnauthorizedException;
 import com.taiphan74.social.modules.auth.dto.AuthResponse;
+import com.taiphan74.social.modules.auth.dto.ForgotPasswordRequest;
 import com.taiphan74.social.modules.auth.dto.LoginRequest;
 import com.taiphan74.social.modules.auth.dto.RegisterRequest;
-import com.taiphan74.social.exception.UnauthorizedException;
+import com.taiphan74.social.modules.auth.dto.RegisterResponse;
+import com.taiphan74.social.modules.auth.dto.ResetPasswordRequest;
+import com.taiphan74.social.modules.auth.dto.VerifyOtpRequest;
 import com.taiphan74.social.modules.user.dto.UserCreateRequest;
 import com.taiphan74.social.modules.user.dto.UserResponse;
 import com.taiphan74.social.modules.user.service.CustomUserDetailsService;
 import com.taiphan74.social.modules.user.service.IUserService;
+import com.taiphan74.social.security.jwt.JwtUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,17 +36,28 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtUtils jwtUtils;
     private final CustomUserDetailsService userDetailsService;
     private final RefreshTokenService refreshTokenService;
+    private final IOtpService otpService;
 
     private static final String REFRESH_COOKIE = "refreshToken";
     private static final int COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 
     @Override
-    public AuthResponse register(RegisterRequest request, HttpServletResponse response) {
-        UserResponse userResponse = createUser(request);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(userResponse.getUsername());
-        String accessToken = jwtUtils.generateToken(userDetails);
-        issueRefreshToken(response, userDetails.getUsername(), userResponse.getId().toString());
-        return new AuthResponse(accessToken, userResponse);
+    public RegisterResponse register(RegisterRequest request, HttpServletResponse response) {
+        UserCreateRequest createRequest = new UserCreateRequest();
+        createRequest.setUsername(request.getUsername());
+        createRequest.setPassword(request.getPassword());
+        createRequest.setEmail(request.getEmail());
+        userService.create(createRequest);
+        otpService.generateAndSendOtp(request.getEmail());
+        return new RegisterResponse("Đăng ký thành công. Vui lòng kiểm tra email để xác thực OTP.", request.getEmail());
+    }
+
+    @Override
+    public AuthResponse verifyOtpAndLogin(VerifyOtpRequest request, HttpServletResponse response) {
+        otpService.validateOtp(request.getEmail(), request.getOtpCode());
+        UserResponse userResponse = userService.findByEmail(request.getEmail());
+        userService.setVerified(userResponse.getId(), true);
+        return buildAuthResponse(userResponse, response);
     }
 
     @Override
@@ -51,9 +67,31 @@ public class AuthServiceImpl implements IAuthService {
         );
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         UserResponse userResponse = userService.findByUsername(userDetails.getUsername());
-        String accessToken = jwtUtils.generateToken(userDetails);
-        issueRefreshToken(response, userDetails.getUsername(), userResponse.getId().toString());
-        return new AuthResponse(accessToken, userResponse);
+        if (!userResponse.isVerified()) {
+            throw new BadRequestException("Email chưa được xác thực. Vui lòng xác thực OTP trước khi đăng nhập.");
+        }
+        return buildAuthResponse(userResponse, response);
+    }
+
+    @Override
+    public void sendOtp(String email) {
+        userService.findByEmail(email);
+        otpService.generateAndSendOtp(email);
+    }
+
+    @Override
+    public AuthResponse forgotPassword(ForgotPasswordRequest request) {
+        userService.findByEmail(request.getEmail());
+        otpService.generateAndSendOtp(request.getEmail());
+        return new AuthResponse("OTP đã được gửi đến email của bạn.", null);
+    }
+
+    @Override
+    public AuthResponse resetPasswordAndLogin(ResetPasswordRequest request, HttpServletResponse response) {
+        otpService.validateOtp(request.getEmail(), request.getOtpCode());
+        UserResponse userResponse = userService.findByEmail(request.getEmail());
+        userService.updatePassword(userResponse.getId(), request.getNewPassword());
+        return buildAuthResponse(userResponse, response);
     }
 
     @Override
@@ -62,22 +100,17 @@ public class AuthServiceImpl implements IAuthService {
         if (refreshToken == null || !jwtUtils.validateRefreshToken(refreshToken)) {
             throw new UnauthorizedException("Invalid or missing refresh token");
         }
-
         String username = jwtUtils.extractUsername(refreshToken);
         String familyId = jwtUtils.extractTokenFamily(refreshToken);
         String oldTokenId = jwtUtils.extractTokenId(refreshToken);
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         UserResponse userResponse = userService.findByUsername(username);
         String newTokenId = UUID.randomUUID().toString();
-
         if (!refreshTokenService.validateAndRotate(userResponse.getId().toString(), familyId, oldTokenId, newTokenId)) {
             clearRefreshCookie(response);
             throw new UnauthorizedException("Token reuse detected, please login again");
         }
-
         String newRefreshToken = jwtUtils.generateRefreshToken(username, familyId, newTokenId);
-        String newAccessToken = jwtUtils.generateToken(userDetails);
+        String newAccessToken = jwtUtils.generateToken(userDetailsService.loadUserByUsername(username));
         setRefreshCookie(response, newRefreshToken);
         return new AuthResponse(newAccessToken, userResponse);
     }
@@ -93,6 +126,13 @@ public class AuthServiceImpl implements IAuthService {
         clearRefreshCookie(response);
     }
 
+    private AuthResponse buildAuthResponse(UserResponse userResponse, HttpServletResponse response) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userResponse.getUsername());
+        String accessToken = jwtUtils.generateToken(userDetails);
+        issueRefreshToken(response, userDetails.getUsername(), userResponse.getId().toString());
+        return new AuthResponse(accessToken, userResponse);
+    }
+
     private void issueRefreshToken(HttpServletResponse response, String username, String userId) {
         String familyId = UUID.randomUUID().toString();
         String refreshToken = jwtUtils.generateRefreshToken(username, familyId);
@@ -101,22 +141,12 @@ public class AuthServiceImpl implements IAuthService {
         setRefreshCookie(response, refreshToken);
     }
 
-    private UserResponse createUser(RegisterRequest request) {
-        UserCreateRequest createRequest = new UserCreateRequest();
-        createRequest.setUsername(request.getUsername());
-        createRequest.setPassword(request.getPassword());
-        createRequest.setEmail(request.getEmail());
-        return userService.create(createRequest);
-    }
-
     private void setRefreshCookie(HttpServletResponse response, String value) {
-        Cookie cookie = buildCookie(value, COOKIE_MAX_AGE);
-        response.addCookie(cookie);
+        response.addCookie(buildCookie(value, COOKIE_MAX_AGE));
     }
 
     private void clearRefreshCookie(HttpServletResponse response) {
-        Cookie cookie = buildCookie("", 0);
-        response.addCookie(cookie);
+        response.addCookie(buildCookie("", 0));
     }
 
     private Cookie buildCookie(String value, int maxAge) {

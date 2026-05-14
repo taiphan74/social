@@ -13,4 +13,6 @@ public interface IUserService {
     UserResponse findByUsername(String username);
     UserResponse findByEmail(String email);
     void delete(UUID id);
+    void setVerified(UUID id, boolean verified);
+    void updatePassword(UUID id, String newPassword);
 }

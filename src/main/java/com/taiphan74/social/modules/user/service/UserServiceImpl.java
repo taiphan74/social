@@ -78,4 +78,20 @@ public class UserServiceImpl implements IUserService {
         }
         userRepository.deleteById(id);
     }
+
+    @Transactional
+    @Override
+    public void setVerified(UUID id, boolean verified) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User không tồn tại"));
+        user.setVerified(verified);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    @Override
+    public void updatePassword(UUID id, String newPassword) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User không tồn tại"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
