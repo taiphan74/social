@@ -1,6 +1,6 @@
 package com.taiphan74.social.modules.mail.service;
 
-import com.taiphan74.social.exception.ErrorCode;
+import com.taiphan74.social.exception.EmailSendFailedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
