@@ -9,31 +9,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserMapper {
 
-    // Map Request -> Entity
     public User toEntity(UserCreateRequest request) {
         if (request == null) return null;
         return User.builder()
                 .username(request.getUsername())
-                .password(request.getPassword()) // Lưu ý: Password này chưa encode
+                .password(request.getPassword())
                 .email(request.getEmail())
                 .build();
     }
 
     public UserResponse toResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .createdAt(user.getCreatedAt())
-                .build();
-    }
-
-    public Page<UserResponse> toResponsePage(Page<User> userPage) {
-        return userPage.map(this::toResponse);
-    }
-
-    public UserResponse toAdminResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -46,15 +31,15 @@ public class UserMapper {
                 .build();
     }
 
+    public Page<UserResponse> toResponsePage(Page<User> userPage) {
+        return userPage.map(this::toResponse);
+    }
+
+    public UserResponse toAdminResponse(User user) {
+        return toResponse(user);
+    }
+
     public UserResponse toMeResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .verified(user.isVerified())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
+        return toResponse(user);
     }
 }

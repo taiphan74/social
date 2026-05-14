@@ -1,6 +1,7 @@
 package com.taiphan74.social.config;
 
 import com.taiphan74.social.security.jwt.JwtAuthenticationFilter;
+import com.taiphan74.social.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -45,6 +47,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
