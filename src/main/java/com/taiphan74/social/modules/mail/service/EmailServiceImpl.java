@@ -23,14 +23,14 @@ public class EmailServiceImpl implements IEmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
-            message.setSubject("Mã xác thực OTP của bạn - Wavefy");
-            message.setText("Mã xác thực của bạn là: " + otpCode + "\n\nMã này có hiệu lực trong 5 phút. Vui lòng không chia sẻ cho người khác.");
+            message.setSubject("Your OTP verification code - Wavefy");
+            message.setText("Your verification code is: " + otpCode + "\n\nThis code is valid for 5 minutes. Please do not share it with anyone.");
             
             mailSender.send(message);
-            log.info("Email OTP đã được gửi tới: {}", to);
+            log.info("OTP email sent to: {}", to);
         } catch (Exception e) {
-            log.error("Lỗi khi gửi email OTP tới {}: {}", to, e.getMessage());
-            throw new RuntimeException("Không thể gửi email OTP, vui lòng thử lại sau.");
+            log.error("Error sending OTP email to {}: {}", to, e.getMessage());
+            throw new RuntimeException("Unable to send OTP email, please try again later.");
         }
     }
 }

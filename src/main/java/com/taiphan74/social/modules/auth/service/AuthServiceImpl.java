@@ -49,7 +49,7 @@ public class AuthServiceImpl implements IAuthService {
         createRequest.setEmail(request.getEmail());
         userService.create(createRequest);
         otpService.generateAndSendOtp(request.getEmail());
-        return new RegisterResponse("Đăng ký thành công. Vui lòng kiểm tra email để xác thực OTP.", request.getEmail());
+        return new RegisterResponse("Registration successful. Please check your email to verify OTP.", request.getEmail());
     }
 
     @Override
@@ -68,7 +68,7 @@ public class AuthServiceImpl implements IAuthService {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         UserResponse userResponse = userService.findByUsername(userDetails.getUsername());
         if (!userResponse.isVerified()) {
-            throw new BadRequestException("Email chưa được xác thực. Vui lòng xác thực OTP trước khi đăng nhập.");
+            throw new BadRequestException("Email not verified. Please verify OTP before logging in.");
         }
         return buildAuthResponse(userResponse, response);
     }
@@ -83,7 +83,7 @@ public class AuthServiceImpl implements IAuthService {
     public AuthResponse forgotPassword(ForgotPasswordRequest request) {
         userService.findByEmail(request.getEmail());
         otpService.generateAndSendOtp(request.getEmail());
-        return new AuthResponse("OTP đã được gửi đến email của bạn.", null);
+        return new AuthResponse("OTP has been sent to your email.", null);
     }
 
     @Override

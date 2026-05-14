@@ -31,14 +31,14 @@ public class OtpServiceImpl implements IOtpService {
 
         // 1. Kiểm tra Cooldown (60s)
         if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
-            throw new BadRequestException("Vui lòng đợi 60 giây trước khi yêu cầu mã mới.");
+            throw new BadRequestException("Please wait 60 seconds before requesting a new code.");
         }
 
         // 2. Kiểm tra giới hạn ngày
         String attemptsStr = redisTemplate.opsForValue().get(attemptsKey);
         int attempts = attemptsStr != null ? Integer.parseInt(attemptsStr) : 0;
         if (attempts >= MAX_ATTEMPTS) {
-            throw new BadRequestException("Bạn đã vượt quá 5 lần yêu cầu OTP trong ngày. Vui lòng thử lại vào ngày mai.");
+            throw new BadRequestException("You have exceeded 5 OTP requests today. Please try again tomorrow.");
         }
 
         // 3. Tạo mã OTP 6 số
@@ -57,7 +57,7 @@ public class OtpServiceImpl implements IOtpService {
 
         // 5. Gửi Email
         emailService.sendOtpEmail(email, otpCode);
-        log.info("Đã tạo và gửi OTP cho email: {}", email);
+        log.info("Generated and sent OTP to email: {}", email);
     }
 
     @Override
@@ -66,15 +66,15 @@ public class OtpServiceImpl implements IOtpService {
         String savedOtp = redisTemplate.opsForValue().get(otpKey);
 
         if (savedOtp == null) {
-            throw new BadRequestException("Mã OTP đã hết hạn hoặc không tồn tại.");
+            throw new BadRequestException("OTP code has expired or does not exist.");
         }
 
         if (!savedOtp.equals(otpCode)) {
-            throw new BadRequestException("Mã OTP không chính xác.");
+            throw new BadRequestException("OTP code is incorrect.");
         }
 
         // Xóa OTP sau khi xác thực thành công để tránh dùng lại
         redisTemplate.delete(otpKey);
-        log.info("Xác thực OTP thành công cho email: {}", email);
+        log.info("OTP verified successfully for email: {}", email);
     }
 }

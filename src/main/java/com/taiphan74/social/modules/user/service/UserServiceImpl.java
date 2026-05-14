@@ -82,7 +82,7 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     @Override
     public void setVerified(UUID id, boolean verified) {
-        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User không tồn tại"));
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
         user.setVerified(verified);
         userRepository.save(user);
     }
@@ -90,7 +90,7 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     @Override
     public void updatePassword(UUID id, String newPassword) {
-        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User không tồn tại"));
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
