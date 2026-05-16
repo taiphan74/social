@@ -64,6 +64,11 @@ public class User {
     @Schema(description = "Email verified status")
     private boolean verified;
 
+    @Builder.Default
+    @Column(name = "username_customized", nullable = false)
+    @Schema(description = "Whether user has customized username")
+    private boolean usernameCustomized = true;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
     @Schema(description = "User role", example = "USER")

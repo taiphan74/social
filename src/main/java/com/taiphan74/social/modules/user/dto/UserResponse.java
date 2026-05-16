@@ -24,6 +24,8 @@ public class UserResponse {
     private boolean enabled;
     @Schema(description = "Is email verified")
     private boolean verified;
+    @Schema(description = "Whether user has customized username")
+    private boolean usernameCustomized;
     @Schema(description = "Created timestamp")
     private LocalDateTime createdAt;
     @Schema(description = "Last update timestamp")
